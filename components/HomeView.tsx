@@ -217,6 +217,63 @@ export default function HomeView({
           </div>
         )}
 
+        <section className="mt-16 rounded-3xl border border-border bg-card p-10 shadow-[0_24px_80px_rgba(15,23,42,0.12)]">
+          <p className="text-[11px] uppercase tracking-[0.4em] text-muted-foreground">{t("pricing.kicker")}</p>
+          <div className="mt-4 flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+            <div>
+              <h3 className="font-display text-2xl font-semibold text-foreground">{t("pricing.title")}</h3>
+              <p className="mt-2 text-sm text-muted-foreground">{t("pricing.subtitle")}</p>
+            </div>
+            <Link
+              href="/login?next=/dashboard"
+              className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+            >
+              {t("pricing.primaryCta")}
+            </Link>
+          </div>
+
+          <div className="mt-8 grid gap-6 md:grid-cols-3">
+            <div className="rounded-2xl border border-border bg-background p-6">
+              <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">{t("pricing.planFree.label")}</p>
+              <p className="mt-3 text-3xl font-semibold text-foreground">{t("pricing.planFree.price")}</p>
+              <p className="mt-2 text-sm text-muted-foreground">{t("pricing.planFree.desc")}</p>
+              <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
+                <li>{t("pricing.planFree.b1")}</li>
+                <li>{t("pricing.planFree.b2")}</li>
+                <li>{t("pricing.planFree.b3")}</li>
+              </ul>
+            </div>
+            <div className="rounded-2xl border border-primary bg-primary/5 p-6 shadow-[0_20px_60px_rgba(16,185,129,0.15)]">
+              <p className="text-xs uppercase tracking-[0.3em] text-primary">{t("pricing.planPro.label")}</p>
+              <p className="mt-3 text-3xl font-semibold text-foreground">{t("pricing.planPro.price")}</p>
+              <p className="mt-2 text-sm text-muted-foreground">{t("pricing.planPro.desc")}</p>
+              <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
+                <li>{t("pricing.planPro.b1")}</li>
+                <li>{t("pricing.planPro.b2")}</li>
+                <li>{t("pricing.planPro.b3")}</li>
+              </ul>
+              <div className="mt-6">
+                <Link
+                  href="/login?next=/dashboard"
+                  className="inline-flex rounded-full bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+                >
+                  {t("pricing.secondaryCta")}
+                </Link>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-border bg-background p-6">
+              <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">{t("pricing.planTeam.label")}</p>
+              <p className="mt-3 text-3xl font-semibold text-foreground">{t("pricing.planTeam.price")}</p>
+              <p className="mt-2 text-sm text-muted-foreground">{t("pricing.planTeam.desc")}</p>
+              <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
+                <li>{t("pricing.planTeam.b1")}</li>
+                <li>{t("pricing.planTeam.b2")}</li>
+                <li>{t("pricing.planTeam.b3")}</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
         <p
           className="text-center text-muted-foreground/60 text-xs mt-12 max-w-md mx-auto opacity-0 animate-fade-in"
           style={{ animationDelay: "700ms", animationFillMode: "forwards" }}
