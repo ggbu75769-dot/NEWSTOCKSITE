@@ -72,7 +72,7 @@ export default function HomeView({
           <div className="flex items-center gap-3">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card shadow-md border border-border">
               <Sparkles className="w-4 h-4 text-accent" />
-              <span className="text-sm font-medium text-foreground">{t("home.tagline")}</span>
+              <span className="text-sm font-medium text-foreground whitespace-pre-line">{t("home.tagline")}</span>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -107,13 +107,13 @@ export default function HomeView({
             <br />
             <span className="inline-flex items-center gap-2">
               <span className="text-gradient-fire text-5xl sm:text-6xl md:text-7xl">
-                {t("home.heroScore", { score: "9/10" })}
+                {t("home.heroScore", { score: "90" })}
               </span>
               <span className="text-muted-foreground text-lg sm:text-xl">{t("home.heroSuffix")}</span>
               <TrendingUp className="w-10 h-10 sm:w-12 sm:h-12 text-primary animate-float" />
             </span>
             <br />
-            <span className="text-muted-foreground text-2xl sm:text-3xl font-medium">
+            <span className="text-muted-foreground text-2xl sm:text-3xl font-medium whitespace-pre-line">
               {t("home.heroSubtitle")}
             </span>
           </h1>
@@ -203,8 +203,10 @@ export default function HomeView({
           <div id="auth-section" className="mt-10 scroll-mt-24">
             <div className="rounded-3xl border border-border bg-card p-10 text-center shadow-[0_24px_80px_rgba(15,23,42,0.12)]">
               <p className="text-[11px] uppercase tracking-[0.4em] text-muted-foreground">{t("home.getFullAccess")}</p>
-              <h3 className="mt-4 font-display text-2xl font-semibold text-foreground">{t("home.signInToUnlock")}</h3>
-              <p className="mt-2 text-sm text-muted-foreground">{t("home.googleOnly")}</p>
+              <h3 className="mt-4 font-display text-2xl font-semibold text-foreground whitespace-pre-line">
+                {t("home.signInToUnlock")}
+              </h3>
+              <p className="mt-2 text-sm text-muted-foreground whitespace-pre-line">{t("home.googleOnly")}</p>
               <div className="mt-6 flex justify-center">
                 <Link
                   href="/login?next=/dashboard"
@@ -221,8 +223,10 @@ export default function HomeView({
           <p className="text-[11px] uppercase tracking-[0.4em] text-muted-foreground">{t("pricing.kicker")}</p>
           <div className="mt-4 flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
             <div>
-              <h3 className="font-display text-2xl font-semibold text-foreground">{t("pricing.title")}</h3>
-              <p className="mt-2 text-sm text-muted-foreground">{t("pricing.subtitle")}</p>
+              <h3 className="font-display text-2xl font-semibold text-foreground whitespace-pre-line">
+                {t("pricing.title")}
+              </h3>
+              <p className="mt-2 text-sm text-muted-foreground whitespace-pre-line">{t("pricing.subtitle")}</p>
             </div>
             <Link
               href="/login?next=/dashboard"

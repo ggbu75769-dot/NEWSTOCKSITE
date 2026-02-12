@@ -29,7 +29,7 @@ export default function LoginView({ errorKey, nextTarget }: LoginViewProps) {
           <div className="text-center mb-8">
             <p className="text-[11px] uppercase tracking-[0.4em] text-muted-foreground">{t("login.oauthLabel")}</p>
             <h1 className="mt-4 font-display text-3xl sm:text-4xl font-bold text-foreground">{t("login.title")}</h1>
-            <p className="mt-3 text-sm text-muted-foreground">{t("login.subtitle")}</p>
+            <p className="mt-3 text-sm text-muted-foreground whitespace-pre-line">{t("login.subtitle")}</p>
           </div>
 
           {errorKey && (
