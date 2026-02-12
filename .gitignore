@@ -10,3 +10,6 @@ dev.log
 *.pem
 *.key
 coverage/
+__pycache__/
+*.pyc
+data/
