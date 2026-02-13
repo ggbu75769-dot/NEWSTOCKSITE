@@ -8,7 +8,7 @@ export type StockCardProps = {
   rank: number;
   ticker: string;
   name: string;
-  winRate: number;
+  aiScore: number;
   avgReturn: number;
   holdingPeriod: string;
   isTop?: boolean;
@@ -49,7 +49,7 @@ export default function StockCard({
   rank,
   ticker,
   name,
-  winRate,
+  aiScore,
   avgReturn,
   holdingPeriod,
   isTop = false,
@@ -117,11 +117,11 @@ export default function StockCard({
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div className="text-center p-3 rounded-xl bg-primary/10">
             <div className={`font-display text-4xl font-bold ${isTop ? "text-gradient-fire" : "text-primary"}`}>
-              {winRate.toFixed(1)}%
+              {aiScore.toFixed(0)}
             </div>
             <div className="text-xs text-muted-foreground mt-1 flex items-center justify-center gap-1">
               <Flame className="w-3 h-3 text-accent" />
-              {t("stockCard.winRate")}
+              {t("stockCard.aiScore")}
             </div>
           </div>
 
@@ -153,7 +153,7 @@ export default function StockCard({
 
       {isTop && (
         <div className="absolute -top-2 -right-2 px-3 py-1 bg-accent text-accent-foreground text-xs font-bold rounded-full shadow-lg animate-bounce-soft">
-          {t("stockCard.hot")}
+          {t("stockCard.focus")}
         </div>
       )}
     </div>

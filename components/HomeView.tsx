@@ -6,8 +6,13 @@ import StockCard from "@/components/StockCard";
 import ThemeToggle from "@/components/ThemeToggle";
 import UserBadge from "@/components/UserBadge";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-import { Sparkles, TrendingUp } from "lucide-react";
+import HeroSection from "@/components/HeroSection";
+import { fetchRecommendations } from "@/lib/recommendations/client";
+import { getMarketLabelBySymbol, inferCurrencyBySymbol } from "@/lib/recommendations/market";
+import { StockRecommendation } from "@/lib/recommendations/types";
+import { ArrowRight, BrainCircuit, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 export type RankingItem = {
@@ -28,12 +33,6 @@ type HomeViewProps = {
   todayIso: string;
 };
 
-const formatDate = (date: Date, locale: string) =>
-  date.toLocaleDateString(locale, {
-    month: "short",
-    day: "numeric",
-  });
-
 const formatHoldingPeriod = (date: Date, locale: string) => {
   const start = date.toLocaleDateString(locale, { month: "short", day: "numeric" });
   const endDate = new Date(date);
@@ -53,8 +52,52 @@ export default function HomeView({
   const { t, i18n } = useTranslation();
   const today = new Date(todayIso);
   const locale = i18n.language === "en" ? "en-US" : "ko-KR";
-  const top = rankings[0];
-  const heroName = isLoggedIn ? top?.name ?? t("home.mysteryStock") : t("home.mysteryStock");
+  const insightDate = today.toLocaleDateString(locale, {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const lang = i18n.language === "en" ? "en" : "ko";
+  const [topRecommendations, setTopRecommendations] = useState<StockRecommendation[]>([]);
+
+  useEffect(() => {
+    let active = true;
+
+    fetchRecommendations({ language: lang, limit: 3 })
+      .then((items) => {
+        if (!active) return;
+        setTopRecommendations(items);
+      })
+      .catch((err) => {
+        console.error("[home] failed to fetch recommendations", err);
+        if (!active) return;
+        setTopRecommendations([]);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [lang]);
+
+  const formatPrice = (value: number, symbol: string) => {
+    const currency = inferCurrencyBySymbol(symbol);
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      maximumFractionDigits: currency === "KRW" ? 0 : 2,
+    }).format(value);
+  };
+
+  const formatFluctuation = (value: number) => {
+    const sign = value >= 0 ? "+" : "";
+    return `${sign}${value.toFixed(2)}%`;
+  };
+
+  const scoreTone = (score: number) => {
+    if (score >= 90) return "text-emerald-600 bg-emerald-500/10 border-emerald-500/20";
+    if (score >= 80) return "text-primary bg-primary/10 border-primary/20";
+    return "text-amber-600 bg-amber-500/10 border-amber-500/20";
+  };
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -67,8 +110,8 @@ export default function HomeView({
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/3 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 container mx-auto px-4 py-12 md:py-16">
-        <div className="flex items-center justify-between gap-4 mb-6">
+      <div className="relative z-10 container mx-auto px-4 py-3 md:py-4">
+        <div className="flex items-center justify-between gap-4 mb-3">
           <div className="flex items-center gap-3">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card shadow-md border border-border">
               <Sparkles className="w-4 h-4 text-accent" />
@@ -94,70 +137,47 @@ export default function HomeView({
           </div>
         </div>
 
-        <div
-          className="text-center mb-10 opacity-0 animate-fade-in"
-          style={{ animationDelay: "100ms", animationFillMode: "forwards" }}
-        >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent font-semibold text-sm mb-6 animate-bounce-soft">
-            <span>{formatDate(today, locale)}</span>
-          </div>
+        <HeroSection />
 
-          <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-bold text-foreground leading-tight mb-4">
-            <span className="text-gradient-gain">{t("home.heroPrefix", { name: heroName })}</span> {t("home.heroRise")}
-            <br />
-            <span className="inline-flex items-center gap-2">
-              <span className="text-gradient-fire text-5xl sm:text-6xl md:text-7xl">
-                {t("home.heroScore", { score: "90" })}
-              </span>
-              <span className="text-muted-foreground text-lg sm:text-xl">{t("home.heroSuffix")}</span>
-              <TrendingUp className="w-10 h-10 sm:w-12 sm:h-12 text-primary animate-float" />
-            </span>
-            <br />
-            <span className="text-muted-foreground text-2xl sm:text-3xl font-medium whitespace-pre-line">
-              {t("home.heroSubtitle")}
-            </span>
-          </h1>
-
-          <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:justify-center">
-            {isLoggedIn ? (
-              <Link
-                href="/dashboard"
-                className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
-              >
-                {t("home.viewDashboard")}
-              </Link>
-            ) : (
-              <Link
-                href="/login?next=/dashboard"
-                className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
-              >
-                {t("home.startSignals")}
-              </Link>
-            )}
-            <a
-              href="#how-it-works"
-              className="rounded-full border border-border px-6 py-3 text-sm font-semibold text-foreground hover:shadow-md"
+        <div className="mt-4 mb-5 flex flex-col gap-3 sm:flex-row sm:justify-center">
+          {isLoggedIn ? (
+            <Link
+              href="/dashboard"
+              className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
             >
-              {t("home.seeHowItWorks")}
-            </a>
-          </div>
+              {t("home.viewDashboard")}
+            </Link>
+          ) : (
+            <Link
+              href="/login?next=/dashboard"
+              className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+            >
+              {t("home.startSignals")}
+            </Link>
+          )}
+          <a
+            href="#how-it-works"
+            className="rounded-full border border-border px-6 py-3 text-sm font-semibold text-foreground hover:shadow-md"
+          >
+            {t("home.seeHowItWorks")}
+          </a>
         </div>
 
         <div
-          className="text-center mb-8 opacity-0 animate-fade-in"
+          className="text-center mb-4 opacity-0 animate-fade-in"
           style={{ animationDelay: "200ms", animationFillMode: "forwards" }}
         >
-          <h2 className="font-display text-xl sm:text-2xl font-semibold text-foreground">{t("home.topPicks")}</h2>
+          <p className="text-sm sm:text-base font-semibold text-muted-foreground">{insightDate}</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-4xl mx-auto mb-8">
           {rankings.map((item, index) => (
             <StockCard
               key={item.rank}
               rank={item.rank}
               ticker={item.ticker}
               name={item.name}
-              winRate={item.win_rate}
+              aiScore={item.confluence_score}
               avgReturn={item.avg_return}
               holdingPeriod={formatHoldingPeriod(today, locale)}
               isTop={item.rank === 1}
@@ -166,6 +186,54 @@ export default function HomeView({
             />
           ))}
         </div>
+
+        <section className="mb-8 rounded-3xl border border-border bg-card p-8 shadow-[0_24px_80px_rgba(15,23,42,0.12)]">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">{t("home.aiTopPicksKicker")}</p>
+              <h2 className="mt-2 text-2xl font-semibold text-foreground">{t("home.aiTopPicksTitle")}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{t("home.aiTopPicksSubtitle")}</p>
+            </div>
+            <Link
+              href="/recommendations"
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-5 py-2 text-sm font-semibold text-primary transition hover:bg-primary/20"
+            >
+              {t("home.viewAllRecommendations")}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            {topRecommendations.map((item) => {
+              const marketLabel = getMarketLabelBySymbol(item.symbol, lang);
+              return (
+                <article key={item.id} className="card-elevated rounded-2xl p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-lg font-bold text-foreground">{item.name}</p>
+                      {marketLabel ? <p className="mt-1 text-xs font-medium text-muted-foreground">{marketLabel}</p> : null}
+                    </div>
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${scoreTone(item.aiScore)}`}
+                    >
+                      <BrainCircuit className="h-3.5 w-3.5" />
+                      {t("home.aiScoreLabel")} {item.aiScore}
+                    </span>
+                  </div>
+
+                  <div className="mt-5 flex items-end justify-between">
+                    <p className="text-2xl font-semibold text-foreground">{formatPrice(item.currentPrice, item.symbol)}</p>
+                    <p className={`text-sm font-semibold ${item.fluctuationRate >= 0 ? "text-emerald-600" : "text-rose-500"}`}>
+                      {formatFluctuation(item.fluctuationRate)}
+                    </p>
+                  </div>
+
+                  <p className="mt-4 max-h-16 overflow-hidden text-sm text-muted-foreground">{item.reasoning}</p>
+                </article>
+              );
+            })}
+          </div>
+        </section>
 
         <SearchBar isLoggedIn={isLoggedIn} />
 

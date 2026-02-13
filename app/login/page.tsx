@@ -3,15 +3,10 @@ import { getServerSession } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
 type LoginPageProps = {
-  searchParams?:
-    | {
-        error?: string;
-        next?: string;
-      }
-    | Promise<{
-        error?: string;
-        next?: string;
-      }>;
+  searchParams?: Promise<{
+    error?: string | string[];
+    next?: string | string[];
+  }>;
 };
 
 const getErrorKey = (error?: string) => {
@@ -39,9 +34,16 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     redirect("/dashboard");
   }
 
-  const resolvedSearchParams = await Promise.resolve(searchParams);
-  const errorKey = getErrorKey(resolvedSearchParams?.error);
-  const nextTarget = resolvedSearchParams?.next ?? "/dashboard";
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const errorValue = Array.isArray(resolvedSearchParams?.error)
+    ? resolvedSearchParams?.error[0]
+    : resolvedSearchParams?.error;
+  const nextValue = Array.isArray(resolvedSearchParams?.next)
+    ? resolvedSearchParams?.next[0]
+    : resolvedSearchParams?.next;
+
+  const errorKey = getErrorKey(errorValue);
+  const nextTarget = nextValue ?? "/dashboard";
 
   return <LoginView errorKey={errorKey} nextTarget={nextTarget} />;
 }
