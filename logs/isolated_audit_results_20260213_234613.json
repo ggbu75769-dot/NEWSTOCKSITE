@@ -1,0 +1,44 @@
+[
+  {
+    "time": "2026-02-13 23:46:13",
+    "cycle": 1,
+    "verdict": "FAIL",
+    "checks": [
+      {
+        "cmd": "npm run typecheck",
+        "code": 1,
+        "elapsed": 0.49,
+        "stdout": "\n> typecheck\n> tsc --noEmit\n\n",
+        "stderr": "'tsc'은(는) 내부 또는 외부 명령, 실행할 수 있는 프로그램, 또는\n배치 파일이 아닙니다.\n"
+      },
+      {
+        "cmd": "npm run test",
+        "code": 1,
+        "elapsed": 0.42,
+        "stdout": "\n> test\n> vitest run\n\n",
+        "stderr": "'vitest'은(는) 내부 또는 외부 명령, 실행할 수 있는 프로그램, 또는\n배치 파일이 아닙니다.\n"
+      },
+      {
+        "cmd": "python -m py_compile auto_quant_squad.py build_tier1_features.py stock_data_lfs_backup.py monitor_best_logic.py build_krx_symbol_master.py",
+        "code": 0,
+        "elapsed": 0.23,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "cmd": "rg -n \"TODO|FIXME|HACK|XXX\" app components lib || exit 0",
+        "code": 0,
+        "elapsed": 0.4,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "cmd": "git status --short",
+        "code": 0,
+        "elapsed": 0.12,
+        "stdout": "?? AUDIT_COMPETITIVE_GAP.md\n?? continuous_audit_agent.py\n",
+        "stderr": ""
+      }
+    ]
+  }
+]

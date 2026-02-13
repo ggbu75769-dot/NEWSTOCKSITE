@@ -504,32 +504,180 @@ class LogicExpertAgent:
 class QAEngineerAgent:
     """Agent B: strict validator / backtester."""
 
-    def __init__(self, backtester: StrategyBacktester):
+    def __init__(
+        self,
+        backtester: StrategyBacktester,
+        max_drawdown_gate: float = -0.15,
+        win_rate_gate: float = 55.0,
+        near_miss_keep: int = 20,
+    ):
         self.backtester = backtester
+        self.max_drawdown_gate = max_drawdown_gate
+        self.win_rate_gate = win_rate_gate
+        self.near_miss_keep = near_miss_keep
+
+        self.total_batches = 0
+        self.total_candidates = 0
+        self.total_accepted = 0
+        self.total_rejected = 0
+        self.total_errors = 0
+        self.total_evaluable = 0
+
+        self.reject_reasons: dict[str, int] = {
+            "no_result": 0,
+            "mdd_only": 0,
+            "win_rate_only": 0,
+            "mdd_and_win_rate": 0,
+        }
+        self.metric_sums: dict[str, float] = {
+            "sharpe": 0.0,
+            "max_drawdown": 0.0,
+            "win_rate": 0.0,
+            "trades": 0.0,
+            "cagr": 0.0,
+            "profit_factor": 0.0,
+            "avg_trade_return": 0.0,
+        }
+        self.near_miss: list[dict[str, Any]] = []
+
+    @staticmethod
+    def _clip01(x: float) -> float:
+        return max(0.0, min(1.0, x))
+
+    def _near_miss_score(self, m: StrategyMetrics) -> float:
+        wr_score = self._clip01(m.win_rate / self.win_rate_gate)
+        if m.max_drawdown >= self.max_drawdown_gate:
+            mdd_score = 1.0
+        else:
+            gap = abs(self.max_drawdown_gate - m.max_drawdown)
+            mdd_score = self._clip01(1.0 - (gap / 0.30))
+        sharpe_score = self._clip01((m.sharpe + 0.5) / 2.5)
+        return 0.55 * wr_score + 0.35 * mdd_score + 0.10 * sharpe_score
+
+    def _record_metrics(self, m: StrategyMetrics) -> None:
+        self.total_evaluable += 1
+        self.metric_sums["sharpe"] += m.sharpe
+        self.metric_sums["max_drawdown"] += m.max_drawdown
+        self.metric_sums["win_rate"] += m.win_rate
+        self.metric_sums["trades"] += float(m.trades)
+        self.metric_sums["cagr"] += m.cagr
+        self.metric_sums["profit_factor"] += m.profit_factor
+        self.metric_sums["avg_trade_return"] += m.avg_trade_return
+
+    def _push_near_miss(self, result: StrategyResult, reasons: list[str]) -> None:
+        m = result.metrics
+        entry = {
+            "near_miss_score": round(self._near_miss_score(m), 6),
+            "reasons": reasons,
+            "metrics": {
+                "sharpe": round(m.sharpe, 6),
+                "max_drawdown": round(m.max_drawdown, 6),
+                "win_rate": round(m.win_rate, 4),
+                "trades": int(m.trades),
+                "cagr": round(m.cagr, 6),
+                "profit_factor": round(m.profit_factor, 6),
+                "avg_trade_return": round(m.avg_trade_return, 6),
+            },
+            "params": asdict(result.genome),
+        }
+        self.near_miss.append(entry)
+        self.near_miss.sort(
+            key=lambda x: (x["near_miss_score"], x["metrics"]["sharpe"]),
+            reverse=True,
+        )
+        if len(self.near_miss) > self.near_miss_keep:
+            self.near_miss = self.near_miss[: self.near_miss_keep]
 
     def validate_batch(self, batch: Iterable[StrategyGenome]) -> tuple[list[StrategyResult], int, int]:
+        self.total_batches += 1
         accepted: list[StrategyResult] = []
         rejected = 0
         errors = 0
+        batch_count = 0
 
         for genome in batch:
+            batch_count += 1
             try:
                 result = self.backtester.evaluate(genome)
                 if result is None:
                     rejected += 1
+                    self.reject_reasons["no_result"] += 1
                     continue
-                if result.metrics.max_drawdown < -0.15:
+                self._record_metrics(result.metrics)
+                mdd_fail = result.metrics.max_drawdown < self.max_drawdown_gate
+                wr_fail = result.metrics.win_rate < self.win_rate_gate
+                if mdd_fail or wr_fail:
                     rejected += 1
-                    continue
-                if result.metrics.win_rate < 55.0:
-                    rejected += 1
+                    if mdd_fail and wr_fail:
+                        self.reject_reasons["mdd_and_win_rate"] += 1
+                    elif mdd_fail:
+                        self.reject_reasons["mdd_only"] += 1
+                    else:
+                        self.reject_reasons["win_rate_only"] += 1
+                    reasons: list[str] = []
+                    if mdd_fail:
+                        reasons.append("mdd")
+                    if wr_fail:
+                        reasons.append("win_rate")
+                    self._push_near_miss(result, reasons)
                     continue
                 accepted.append(result)
             except Exception:
                 errors += 1
 
+        self.total_candidates += batch_count
+        self.total_accepted += len(accepted)
+        self.total_rejected += rejected
+        self.total_errors += errors
         accepted.sort(key=lambda x: (x.metrics.sharpe, x.fitness), reverse=True)
         return accepted, rejected, errors
+
+    def build_summary(self) -> dict[str, Any]:
+        metric_avg: dict[str, float] = {}
+        if self.total_evaluable > 0:
+            for k, v in self.metric_sums.items():
+                metric_avg[k] = round(v / self.total_evaluable, 6)
+
+        suggestions: list[str] = []
+        if self.total_candidates > 0:
+            no_result_ratio = self.reject_reasons["no_result"] / float(self.total_candidates)
+            wr_fail_ratio = (self.reject_reasons["win_rate_only"] + self.reject_reasons["mdd_and_win_rate"]) / float(
+                self.total_candidates
+            )
+            mdd_fail_ratio = (self.reject_reasons["mdd_only"] + self.reject_reasons["mdd_and_win_rate"]) / float(
+                self.total_candidates
+            )
+            if no_result_ratio >= 0.5:
+                suggestions.append(
+                    "Many genomes produced insufficient tradable signals. Relax entry strictness or increase hold window."
+                )
+            if wr_fail_ratio >= 0.4:
+                suggestions.append("Win-rate gate is the dominant rejection cause. Tune entry quality or exit logic.")
+            if mdd_fail_ratio >= 0.3:
+                suggestions.append("Drawdown gate is frequently violated. Tighten stop-loss or reduce breakout aggressiveness.")
+        if not suggestions:
+            suggestions.append("Current QA gate and search space are balanced. Continue with longer runtime for convergence.")
+
+        accept_rate = (self.total_accepted / self.total_candidates) if self.total_candidates else 0.0
+        return {
+            "qa_gate": {
+                "max_drawdown": self.max_drawdown_gate,
+                "min_win_rate": self.win_rate_gate,
+            },
+            "counters": {
+                "total_batches": self.total_batches,
+                "total_candidates": self.total_candidates,
+                "accepted": self.total_accepted,
+                "rejected": self.total_rejected,
+                "errors": self.total_errors,
+                "evaluable": self.total_evaluable,
+                "accept_rate": round(accept_rate, 6),
+            },
+            "reject_reasons": self.reject_reasons,
+            "metric_average": metric_avg,
+            "near_miss_top": self.near_miss[:10],
+            "suggestions": suggestions,
+        }
 
 
 class LeadDeveloperAgent:
@@ -583,9 +731,102 @@ class LeadDeveloperAgent:
             self.output_path.parent.mkdir(parents=True, exist_ok=True)
             tmp = self.output_path.with_suffix(".tmp")
             tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-            tmp.replace(self.output_path)
+            replaced = False
+            for _ in range(5):
+                try:
+                    tmp.replace(self.output_path)
+                    replaced = True
+                    break
+                except PermissionError:
+                    time.sleep(0.05)
+            if not replaced:
+                raise PermissionError(f"failed to replace output after retries: {self.output_path}")
         except Exception as exc:
             print(f"[Agent C] persist warning: {exc}")
+
+    def analysis_paths(self) -> tuple[Path, Path]:
+        base = self.output_path.with_suffix("")
+        return (
+            base.parent / f"{base.name}_analysis.json",
+            base.parent / f"{base.name}_analysis.md",
+        )
+
+    def write_analysis(self, analysis: dict[str, Any]) -> tuple[Path, Path]:
+        json_path, md_path = self.analysis_paths()
+        json_path.parent.mkdir(parents=True, exist_ok=True)
+        json_path.write_text(json.dumps(analysis, ensure_ascii=False, indent=2), encoding="utf-8")
+        md_path.write_text(self._analysis_markdown(analysis), encoding="utf-8")
+        return json_path, md_path
+
+    @staticmethod
+    def _analysis_markdown(analysis: dict[str, Any]) -> str:
+        run = analysis.get("run", {})
+        qa = analysis.get("qa_summary", {})
+        counters = qa.get("counters", {})
+        reject = qa.get("reject_reasons", {})
+        best = analysis.get("best_strategy")
+        near_miss = qa.get("near_miss_top", [])
+        suggestions = qa.get("suggestions", [])
+
+        lines: list[str] = []
+        lines.append("# AutoQuant Run Analysis")
+        lines.append("")
+        lines.append(f"- Generated at: `{analysis.get('generated_at', '-')}`")
+        lines.append(f"- Status: `{analysis.get('status', '-')}`")
+        lines.append(f"- Output: `{analysis.get('output_path', '-')}`")
+        lines.append("")
+        lines.append("## Run Summary")
+        lines.append(f"- Iteration: `{run.get('iteration', '-')}`")
+        lines.append(f"- Elapsed seconds: `{run.get('elapsed_seconds', '-')}`")
+        lines.append(f"- Runtime minutes(target): `{run.get('runtime_minutes', '-')}`")
+        lines.append(f"- Universe size: `{run.get('universe_size', '-')}`")
+        lines.append(f"- Batch size: `{run.get('batch_size', '-')}`")
+        lines.append(f"- Seed: `{run.get('seed', '-')}`")
+        lines.append("")
+        lines.append("## QA Gate Result")
+        lines.append(f"- Total candidates: `{counters.get('total_candidates', 0)}`")
+        lines.append(f"- Accepted: `{counters.get('accepted', 0)}`")
+        lines.append(f"- Rejected: `{counters.get('rejected', 0)}`")
+        lines.append(f"- Errors: `{counters.get('errors', 0)}`")
+        lines.append(f"- Accept rate: `{counters.get('accept_rate', 0)}`")
+        lines.append("")
+        lines.append("### Rejection Breakdown")
+        lines.append(f"- no_result: `{reject.get('no_result', 0)}`")
+        lines.append(f"- mdd_only: `{reject.get('mdd_only', 0)}`")
+        lines.append(f"- win_rate_only: `{reject.get('win_rate_only', 0)}`")
+        lines.append(f"- mdd_and_win_rate: `{reject.get('mdd_and_win_rate', 0)}`")
+        lines.append("")
+        if best:
+            bm = best.get("metrics", {})
+            lines.append("## Best Strategy")
+            lines.append(f"- Sharpe: `{bm.get('sharpe', '-')}`")
+            lines.append(f"- Win rate: `{bm.get('win_rate', '-')}`")
+            lines.append(f"- Max drawdown: `{bm.get('max_drawdown', '-')}`")
+            lines.append(f"- Trades: `{bm.get('trades', '-')}`")
+            lines.append("")
+        else:
+            lines.append("## Best Strategy")
+            lines.append("- No strategy passed QA gate in this run.")
+            lines.append("")
+
+        lines.append("## Near-Miss Top 5")
+        if near_miss:
+            lines.append("| Rank | Score | Reasons | Sharpe | WinRate | MDD | Trades |")
+            lines.append("|---|---:|---|---:|---:|---:|---:|")
+            for i, item in enumerate(near_miss[:5], start=1):
+                m = item.get("metrics", {})
+                lines.append(
+                    f"| {i} | {item.get('near_miss_score', '-')} | {','.join(item.get('reasons', []))} | "
+                    f"{m.get('sharpe', '-')} | {m.get('win_rate', '-')} | {m.get('max_drawdown', '-')} | {m.get('trades', '-')} |"
+                )
+        else:
+            lines.append("- No near-miss candidates were recorded.")
+        lines.append("")
+        lines.append("## Suggested Next Action")
+        for s in suggestions:
+            lines.append(f"- {s}")
+        lines.append("")
+        return "\n".join(lines)
 
 
 class ProjectManagerAgent:
@@ -676,6 +917,24 @@ class AutoQuantSquad:
     def run(self) -> StrategyResult | None:
         if not self.universe:
             print("[AutoQuantSquad] No usable symbols loaded. Exiting safely.")
+            analysis = {
+                "generated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "status": "no_universe",
+                "output_path": str(self.agent_c.output_path),
+                "run": {
+                    "iteration": 0,
+                    "elapsed_seconds": 0.0,
+                    "runtime_minutes": self.runtime_minutes,
+                    "batch_size": self.batch_size,
+                    "universe_size": 0,
+                    "seed": self.seed,
+                },
+                "qa_summary": self.agent_b.build_summary(),
+                "best_strategy": None,
+            }
+            json_path, md_path = self.agent_c.write_analysis(analysis)
+            print(f"[AutoQuantSquad] analysis written: {json_path}")
+            print(f"[AutoQuantSquad] analysis written: {md_path}")
             return None
 
         print("[AutoQuantSquad] Command center online. Mission: maximize Sharpe under strict QA gates.")
@@ -722,6 +981,44 @@ class AutoQuantSquad:
             except Exception as exc:
                 print(f"[AutoQuantSquad] iteration={iteration} recovered from exception: {exc}")
                 continue
+
+        elapsed = round(time.time() - start_ts, 2)
+        qa_summary = self.agent_b.build_summary()
+
+        best_payload: dict[str, Any] | None = None
+        if best is not None:
+            best_payload = {
+                "fitness": round(best.fitness, 6),
+                "metrics": {
+                    "sharpe": round(best.metrics.sharpe, 6),
+                    "max_drawdown": round(best.metrics.max_drawdown, 6),
+                    "win_rate": round(best.metrics.win_rate, 4),
+                    "trades": best.metrics.trades,
+                    "cagr": round(best.metrics.cagr, 6),
+                    "profit_factor": round(best.metrics.profit_factor, 6),
+                    "avg_trade_return": round(best.metrics.avg_trade_return, 6),
+                },
+                "params": asdict(best.genome),
+            }
+
+        analysis = {
+            "generated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "status": "ok" if best is not None else "no_survivor",
+            "output_path": str(self.agent_c.output_path),
+            "run": {
+                "iteration": iteration,
+                "elapsed_seconds": elapsed,
+                "runtime_minutes": self.runtime_minutes,
+                "batch_size": self.batch_size,
+                "universe_size": len(self.universe),
+                "seed": self.seed,
+            },
+            "qa_summary": qa_summary,
+            "best_strategy": best_payload,
+        }
+        json_path, md_path = self.agent_c.write_analysis(analysis)
+        print(f"[AutoQuantSquad] analysis written: {json_path}")
+        print(f"[AutoQuantSquad] analysis written: {md_path}")
 
         if best is None:
             print("[AutoQuantSquad] No valid strategy passed QA gates.")

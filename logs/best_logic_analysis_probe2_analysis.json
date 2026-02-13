@@ -1,0 +1,40 @@
+{
+  "generated_at": "2026-02-14 00:34:41",
+  "status": "no_universe",
+  "output_path": "logs\\best_logic_analysis_probe2.json",
+  "run": {
+    "iteration": 0,
+    "elapsed_seconds": 0.0,
+    "runtime_minutes": 0.05,
+    "batch_size": 24,
+    "universe_size": 0,
+    "seed": 7
+  },
+  "qa_summary": {
+    "qa_gate": {
+      "max_drawdown": -0.15,
+      "min_win_rate": 55.0
+    },
+    "counters": {
+      "total_batches": 0,
+      "total_candidates": 0,
+      "accepted": 0,
+      "rejected": 0,
+      "errors": 0,
+      "evaluable": 0,
+      "accept_rate": 0.0
+    },
+    "reject_reasons": {
+      "no_result": 0,
+      "mdd_only": 0,
+      "win_rate_only": 0,
+      "mdd_and_win_rate": 0
+    },
+    "metric_average": {},
+    "near_miss_top": [],
+    "suggestions": [
+      "Current QA gate and search space are balanced. Continue with longer runtime for convergence."
+    ]
+  },
+  "best_strategy": null
+}

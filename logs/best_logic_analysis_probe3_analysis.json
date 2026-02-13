@@ -1,0 +1,40 @@
+{
+  "generated_at": "2026-02-14 00:35:06",
+  "status": "no_survivor",
+  "output_path": "logs\\best_logic_analysis_probe3.json",
+  "run": {
+    "iteration": 1412,
+    "elapsed_seconds": 4.8,
+    "runtime_minutes": 0.08,
+    "batch_size": 24,
+    "universe_size": 80,
+    "seed": 7
+  },
+  "qa_summary": {
+    "qa_gate": {
+      "max_drawdown": -0.15,
+      "min_win_rate": 55.0
+    },
+    "counters": {
+      "total_batches": 1412,
+      "total_candidates": 33888,
+      "accepted": 0,
+      "rejected": 33888,
+      "errors": 0,
+      "evaluable": 0,
+      "accept_rate": 0.0
+    },
+    "reject_reasons": {
+      "no_result": 33888,
+      "mdd_only": 0,
+      "win_rate_only": 0,
+      "mdd_and_win_rate": 0
+    },
+    "metric_average": {},
+    "near_miss_top": [],
+    "suggestions": [
+      "Many genomes produced insufficient tradable signals. Relax entry strictness or increase hold window."
+    ]
+  },
+  "best_strategy": null
+}
