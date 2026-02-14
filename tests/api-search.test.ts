@@ -1,48 +1,33 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { searchStock } from "../lib/searchStock";
+import * as localDb from "../lib/localDb";
 
 describe("searchStock", () => {
-  it("returns the first result when rpc succeeds", async () => {
-    const supabase = {
-      rpc: async () => ({
-        data: [
-          {
-            ticker: "AAPL",
-            name: "Apple Inc.",
-          },
-        ],
-        error: null,
-      }),
-    };
-
-    const result = await searchStock(supabase, "AAPL");
-    expect(result).toEqual({ ticker: "AAPL", name: "Apple Inc." });
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
-  it("returns null when rpc returns empty data", async () => {
-    const supabase = {
-      rpc: async () => ({ data: [], error: null }),
-    };
+  it("returns local search result", async () => {
+    vi.spyOn(localDb, "getLocalSearchResult").mockResolvedValue({
+      ticker: "005930.KS",
+      name: "Samsung Electronics",
+      sector: "KOSPI",
+      ranking_date: "2026-02-11",
+      rank: 1,
+      win_rate: 92.3,
+      avg_return: 5.2,
+      confluence_score: 97.1,
+    });
 
-    const result = await searchStock(supabase, "TSLA");
-    expect(result).toBeNull();
+    const result = await searchStock("005930");
+    expect(result?.ticker).toBe("005930.KS");
+    expect(result?.name).toBe("Samsung Electronics");
   });
 
-  it("returns null when rpc returns error", async () => {
-    const supabase = {
-      rpc: async () => ({ data: null, error: { message: "fail" } }),
-    };
+  it("returns null when local search has no result", async () => {
+    vi.spyOn(localDb, "getLocalSearchResult").mockResolvedValue(null);
 
-    const result = await searchStock(supabase, "MSFT");
-    expect(result).toBeNull();
-  });
-
-  it("returns null when rpc returns non-array", async () => {
-    const supabase = {
-      rpc: async () => ({ data: { ticker: "NVDA" }, error: null }),
-    };
-
-    const result = await searchStock(supabase, "NVDA");
+    const result = await searchStock("UNKNOWN");
     expect(result).toBeNull();
   });
 });

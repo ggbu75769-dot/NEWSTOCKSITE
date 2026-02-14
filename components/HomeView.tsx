@@ -128,7 +128,7 @@ export default function HomeView({
               </div>
             ) : (
               <Link
-                href="/login?next=/dashboard"
+                href="/dashboard"
                 className="rounded-full border border-border bg-card px-5 py-2 text-sm font-medium text-foreground hover:shadow-md"
               >
                 {t("nav.signIn")}
@@ -149,7 +149,7 @@ export default function HomeView({
             </Link>
           ) : (
             <Link
-              href="/login?next=/dashboard"
+              href="/dashboard"
               className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
             >
               {t("home.startSignals")}
@@ -235,7 +235,7 @@ export default function HomeView({
           </div>
         </section>
 
-        <SearchBar isLoggedIn={isLoggedIn} />
+        <SearchBar />
 
         <section
           id="how-it-works"
@@ -277,7 +277,7 @@ export default function HomeView({
               <p className="mt-2 text-sm text-muted-foreground whitespace-pre-line">{t("home.googleOnly")}</p>
               <div className="mt-6 flex justify-center">
                 <Link
-                  href="/login?next=/dashboard"
+                  href="/dashboard"
                   className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
                 >
                   {t("nav.goToLogin")}
@@ -297,7 +297,7 @@ export default function HomeView({
               <p className="mt-2 text-sm text-muted-foreground whitespace-pre-line">{t("pricing.subtitle")}</p>
             </div>
             <Link
-              href="/login?next=/dashboard"
+              href="/dashboard"
               className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
             >
               {t("pricing.primaryCta")}
@@ -326,7 +326,7 @@ export default function HomeView({
               </ul>
               <div className="mt-6">
                 <Link
-                  href="/login?next=/dashboard"
+                  href="/dashboard"
                   className="inline-flex rounded-full bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
                 >
                   {t("pricing.secondaryCta")}

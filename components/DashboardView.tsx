@@ -7,10 +7,9 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { fetchRecommendations } from "@/lib/recommendations/client";
 import { getMarketLabelBySymbol } from "@/lib/recommendations/market";
 import { StockRecommendation } from "@/lib/recommendations/types";
-import { createClientSupabaseClient } from "@/lib/supabase/client";
 import { ArrowRight, BrainCircuit, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 type DashboardViewProps = {
@@ -34,7 +33,7 @@ type LatestPriceRow = {
   volume: number | null;
   trade_date: string;
   market: Market;
-  currency: string | null;
+  currency: string;
 };
 
 const getKstInfo = (): MarketInfo => {
@@ -68,8 +67,6 @@ export default function DashboardView({ name, email, avatarUrl }: DashboardViewP
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [topRecommendations, setTopRecommendations] = useState<StockRecommendation[]>([]);
-
-  const supabase = useMemo(() => createClientSupabaseClient(), []);
   const lang = i18n.language === "en" ? "en" : "ko";
 
   useEffect(() => {
@@ -147,48 +144,40 @@ export default function DashboardView({ name, email, avatarUrl }: DashboardViewP
     setLoading(true);
     setError(null);
 
-    const { data, error: fetchError } = await supabase
-      .from("latest_prices")
-      .select("ticker, name, close, change_pct, volume, trade_date, market, currency")
-      .eq("market", activeMarket)
-      .order("volume", { ascending: false })
-      .limit(6);
+    try {
+      const response = await fetch(`/api/market?market=${activeMarket}&limit=6`, {
+        cache: "no-store",
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        setError(String(payload?.error ?? "Failed to load market data"));
+        setOverview([]);
+        setMovers([]);
+        setLoading(false);
+        return;
+      }
 
-    if (fetchError) {
-      setError(fetchError.message);
+      const rows = (payload?.items ?? []) as LatestPriceRow[];
+      setOverview(rows.slice(0, 2));
+      setMovers(rows.slice(2, 6));
+      setLastUpdated(rows[0]?.trade_date ?? null);
+      setLoading(false);
+    } catch {
+      setError("Failed to load market data");
       setOverview([]);
       setMovers([]);
       setLoading(false);
-      return;
     }
-
-    const rows = (data ?? []) as LatestPriceRow[];
-    setOverview(rows.slice(0, 2));
-    setMovers(rows.slice(2, 6));
-    setLastUpdated(rows[0]?.trade_date ?? null);
-    setLoading(false);
-  }, [activeMarket, supabase]);
+  }, [activeMarket]);
 
   useEffect(() => {
     fetchMarketData();
   }, [fetchMarketData]);
 
   useEffect(() => {
-    const channel = supabase
-      .channel("realtime-market")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "historical_prices" },
-        () => {
-          fetchMarketData();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [fetchMarketData, supabase]);
+    const interval = setInterval(fetchMarketData, 60 * 1000);
+    return () => clearInterval(interval);
+  }, [fetchMarketData]);
 
   const handleOverride = (market: Market) => {
     setOverrideMarket(market);

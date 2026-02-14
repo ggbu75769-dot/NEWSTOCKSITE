@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Search, Sparkles } from "lucide-react";
-import GoogleSignInButton from "@/components/GoogleSignInButton";
 import { useTranslation } from "react-i18next";
 
 type SearchResult = {
@@ -16,11 +15,7 @@ type SearchResult = {
   confluence_score: number | null;
 };
 
-type SearchBarProps = {
-  isLoggedIn: boolean;
-};
-
-export default function SearchBar({ isLoggedIn }: SearchBarProps) {
+export default function SearchBar() {
   const { t } = useTranslation();
   const [symbol, setSymbol] = useState("");
   const [loading, setLoading] = useState(false);
@@ -83,7 +78,7 @@ export default function SearchBar({ isLoggedIn }: SearchBarProps) {
 
       {result && (
         <div className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-[0_12px_36px_rgba(15,23,42,0.12)]">
-          <div className={isLoggedIn ? "" : "blur-md"}>
+          <div>
             <p className="text-lg font-semibold text-foreground">{result.ticker}</p>
             <p className="text-sm text-muted-foreground">{result.name}</p>
           </div>
@@ -105,13 +100,6 @@ export default function SearchBar({ isLoggedIn }: SearchBarProps) {
               </p>
             </div>
           </div>
-
-          {!isLoggedIn && (
-            <div className="mt-4 flex flex-col gap-2 text-xs text-muted-foreground">
-              <p>{t("search.signInReveal")}</p>
-              <GoogleSignInButton label={t("search.revealStock")} />
-            </div>
-          )}
         </div>
       )}
 
