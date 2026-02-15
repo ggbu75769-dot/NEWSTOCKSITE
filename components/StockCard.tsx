@@ -1,7 +1,8 @@
 "use client";
 
 import { Calendar, Flame, Lock, TrendingUp, UserPlus, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
 export type StockCardProps = {
@@ -57,24 +58,18 @@ export default function StockCard({
   isLoggedIn,
 }: StockCardProps) {
   const { t } = useTranslation();
+  const router = useRouter();
   const isUnlocked = isLoggedIn || rank === 1;
   const isLocked = !isUnlocked;
   const lockedCta = getLockedCta(rank, t);
   const LockedIcon = lockedCta.icon;
-  const [hasAuthSection, setHasAuthSection] = useState(false);
-
-  useEffect(() => {
-    setHasAuthSection(Boolean(document.getElementById("auth-section")));
-  }, []);
+  const loginPath = "/login?callbackUrl=/dashboard";
 
   const openPrompt = useCallback(() => {
-    if (isLocked && hasAuthSection) {
-      const authSection = document.getElementById("auth-section");
-      if (authSection) {
-        authSection.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
+    if (isLocked) {
+      router.push(loginPath);
     }
-  }, [isLocked, hasAuthSection]);
+  }, [isLocked, router]);
 
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -91,12 +86,12 @@ export default function StockCard({
     <div
       className={`relative rounded-2xl p-6 opacity-0 animate-slide-up-soft ${
         isTop ? "card-top animate-float-slow" : "card-elevated"
-      } ${isLocked && hasAuthSection ? "cursor-pointer" : ""}`}
+      } ${isLocked ? "cursor-pointer" : ""}`}
       style={{ animationDelay: `${delay}ms`, animationFillMode: "forwards" }}
-      onClick={isLocked && hasAuthSection ? openPrompt : undefined}
-      onKeyDown={isLocked && hasAuthSection ? handleKeyDown : undefined}
-      role={isLocked && hasAuthSection ? "button" : undefined}
-      tabIndex={isLocked && hasAuthSection ? 0 : -1}
+      onClick={isLocked ? openPrompt : undefined}
+      onKeyDown={isLocked ? handleKeyDown : undefined}
+      role={isLocked ? "button" : undefined}
+      tabIndex={isLocked ? 0 : -1}
       aria-disabled={isLocked ? false : undefined}
     >
       <div className={isLocked ? "blur-md select-none" : ""}>
@@ -147,7 +142,16 @@ export default function StockCard({
             {lockedCta.title}
           </div>
           <p className="text-sm font-semibold text-foreground">{lockedCta.body}</p>
-          <span className="text-xs text-muted-foreground">{t("stockCard.lockedHint")}</span>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              openPrompt();
+            }}
+            className="text-xs font-semibold text-primary hover:underline"
+          >
+            {t("stockCard.lockedHint")}
+          </button>
         </div>
       )}
 

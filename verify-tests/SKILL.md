@@ -10,7 +10,7 @@ description: Verify test presence and runnable test workflow for this repository
 Keep test coverage and test execution wiring healthy.
 
 1. Ensure test directory and key test files exist.
-2. Ensure key local search adapter behavior is asserted.
+2. Ensure key local search and rate-limit behaviors are asserted.
 3. Ensure test scripts are present in `package.json`.
 4. Execute tests when script support is available.
 
@@ -20,6 +20,7 @@ Keep test coverage and test execution wiring healthy.
 |---|---|
 | `tests/**/*.test.ts` | Test cases for runtime behavior. |
 | `tests/api-search.test.ts` | Core local search adapter unit test coverage. |
+| `tests/rate-limit.test.ts` | Rate-limit helper coverage for auth endpoint protection. |
 | `vitest.config.ts` | Test runner configuration. |
 | `package.json` | Script declarations for test/typecheck execution. |
 | `lib/searchStock.ts` | Source module targeted by key tests. |
@@ -32,13 +33,14 @@ Keep test coverage and test execution wiring healthy.
 ```bash
 test -d tests
 test -f tests/api-search.test.ts
+test -f tests/rate-limit.test.ts
 test -f vitest.config.ts
 ```
 
 ### Step 2: Verify Key Test Assertions and Mocks
 
 ```bash
-rg -n "describe\\(|it\\(|expect\\(|vi\\.spyOn|getLocalSearchResult|searchStock" tests/api-search.test.ts
+rg -n "describe\\(|it\\(|expect\\(|vi\\.spyOn|getLocalSearchResult|searchStock|checkRateLimit|readClientIdentifier" tests/api-search.test.ts tests/rate-limit.test.ts
 ```
 
 ### Step 3: Verify Required Scripts Exist
@@ -65,7 +67,7 @@ npm run typecheck
 
 Pass:
 - `tests` directory, key test file, and vitest config exist.
-- Key search test contains assertions/mocks for local search path.
+- Key search/rate-limit tests contain assertions for local search path and auth throttling helper.
 - `test` script exists in `package.json`.
 - `npm test` passes when executed.
 

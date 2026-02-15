@@ -4,7 +4,7 @@ import SignOutButton from "@/components/SignOutButton";
 import UserBadge from "@/components/UserBadge";
 import ThemeToggle from "@/components/ThemeToggle";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-import { fetchRecommendations } from "@/lib/recommendations/client";
+import { fetchLatestDailyTopRecommendations } from "@/lib/recommendations/client";
 import { getMarketLabelBySymbol } from "@/lib/recommendations/market";
 import { StockRecommendation } from "@/lib/recommendations/types";
 import { ArrowRight, BrainCircuit, Sparkles } from "lucide-react";
@@ -72,7 +72,7 @@ export default function DashboardView({ name, email, avatarUrl }: DashboardViewP
   useEffect(() => {
     let active = true;
 
-    fetchRecommendations({ language: lang, limit: 3 })
+    fetchLatestDailyTopRecommendations({ language: lang, limit: 3 })
       .then((items) => {
         if (!active) return;
         setTopRecommendations(items);

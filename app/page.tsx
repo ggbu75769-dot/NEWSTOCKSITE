@@ -1,8 +1,11 @@
 import HomeView, { RankingItem } from "@/components/HomeView";
+import { authOptions } from "@/lib/auth";
 import { getLocalHomeRankings } from "@/lib/localDb";
+import { getServerSession } from "next-auth";
 
 export default async function Page() {
   const today = new Date();
+  const session = await getServerSession(authOptions);
   const fallback: RankingItem[] = [
     {
       rank: 1,
@@ -36,10 +39,10 @@ export default async function Page() {
   return (
     <HomeView
       rankings={rankings}
-      isLoggedIn
-      name={null}
-      avatarUrl={null}
-      email={null}
+      isLoggedIn={Boolean(session)}
+      name={session?.user?.name ?? null}
+      avatarUrl={session?.user?.image ?? null}
+      email={session?.user?.email ?? null}
       todayIso={today.toISOString()}
     />
   );

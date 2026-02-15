@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
+import sys
 import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -383,9 +385,56 @@ def run_daily_update(tickers: Iterable[str]) -> Dict[str, int]:
     return results
 
 
+def run_daily_top5_refresh() -> None:
+    enabled = os.getenv("VS_ENABLE_DAILY_TOP5_REFRESH", "true").strip().lower()
+    if enabled in {"0", "false", "no", "off"}:
+        print("[TOP5] skipped: VS_ENABLE_DAILY_TOP5_REFRESH is disabled")
+        return
+
+    script_path = Path(os.getenv("VS_DAILY_TOP5_SCRIPT", "build_daily_top5_recommendations.py"))
+    if not script_path.exists():
+        raise FileNotFoundError(f"[TOP5] script not found: {script_path}")
+
+    cmd: List[str] = [
+        sys.executable,
+        str(script_path),
+        "--start-date",
+        os.getenv("VS_DAILY_TOP5_START_DATE", "2026-01-01"),
+    ]
+
+    end_date = os.getenv("VS_DAILY_TOP5_END_DATE", "").strip()
+    if end_date:
+        cmd.extend(["--end-date", end_date])
+
+    out_path = os.getenv("VS_DAILY_TOP5_OUT", "").strip()
+    if out_path:
+        cmd.extend(["--out", out_path])
+
+    weight_turnover = os.getenv("VS_DAILY_TOP5_WEIGHT_TURNOVER", "").strip()
+    if weight_turnover:
+        cmd.extend(["--weight-turnover", weight_turnover])
+
+    weight_ret1d = os.getenv("VS_DAILY_TOP5_WEIGHT_RET1D", "").strip()
+    if weight_ret1d:
+        cmd.extend(["--weight-ret1d", weight_ret1d])
+
+    weight_model = os.getenv("VS_DAILY_TOP5_WEIGHT_MODEL", "").strip()
+    if weight_model:
+        cmd.extend(["--weight-model", weight_model])
+
+    print(f"[TOP5] running: {' '.join(cmd)}")
+    completed = subprocess.run(cmd, capture_output=True, text=True, check=True)
+    if completed.stdout.strip():
+        print(completed.stdout.strip())
+    if completed.stderr.strip():
+        print(completed.stderr.strip())
+    print("[TOP5] daily recommendations refresh complete")
+
+
 if __name__ == "__main__":
     load_dotenv(".env.r2.local", override=False)
     load_dotenv(".env.local", override=False)
     load_dotenv(".env", override=False)
     tickers = resolve_tickers(os.getenv("VS_TICKERS", "AAPL,MSFT,NVDA,AMZN,GOOGL").split(","))
     run_daily_update(tickers)
+    run_daily_top5_refresh()

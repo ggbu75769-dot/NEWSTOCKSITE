@@ -1,6 +1,7 @@
 import { constants } from "node:fs";
 import { access, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
+import { DATA_DIR, LOGS_DIR } from "./runtimePaths";
 
 export type MarketCode = "KR" | "US";
 
@@ -69,8 +70,6 @@ export type LocalMarketRow = {
   currency: string;
 };
 
-const DATA_DIR = path.join(process.cwd(), "data");
-const LOGS_DIR = path.join(process.cwd(), "logs");
 const KRX_MASTER_PATH = path.join(DATA_DIR, "krx_symbol_master.csv");
 const FEATURES_FILE_REGEX = /^tier1_features_latest_(\d{8}_\d{6})\.csv$/;
 const CANDIDATES_FILE_REGEX = /^tier1_buy_candidates_(\d{8}_\d{6})\.csv$/;

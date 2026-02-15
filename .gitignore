@@ -12,4 +12,4 @@ dev.log
 coverage/
 __pycache__/
 *.pyc
-data/
+stock_data/

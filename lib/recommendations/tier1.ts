@@ -2,6 +2,7 @@ import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { loadKrxMasterNameMap } from "@/lib/recommendations/krxMaster";
 import { RecommendationLanguage, RecommendationResponse, StockRecommendation } from "@/lib/recommendations/types";
+import { LOGS_DIR } from "../runtimePaths";
 
 type Tier1CandidateRow = {
   ticker: string;
@@ -21,7 +22,6 @@ type Tier1RecommendationOptions = {
   sourceFile?: string;
 };
 
-const LOGS_DIR = path.join(process.cwd(), "logs");
 const TIER1_FILE_REGEX = /^tier1_buy_candidates_(\d{8}_\d{6})\.csv$/;
 
 function normalizeLanguage(language?: string): RecommendationLanguage {

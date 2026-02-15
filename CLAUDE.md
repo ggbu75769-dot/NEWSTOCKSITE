@@ -8,10 +8,10 @@ This repository uses local verification skills to keep implementation checks con
 - `verify-implementation`: Use to run all registered `verify-*` skills and consolidate one verification report.
 - `verify-deps`: Use for dependency/script hygiene checks and forbidden package regression checks.
 - `verify-lib-localdata`: Use for local data adapter and file-based loader verification.
-- `verify-api-routes`: Use for `app/api` route wiring and JSON/error response checks.
-- `verify-ui-pages`: Use for page/component wiring and local UI flow checks.
+- `verify-api-routes`: Use for `app/api` route wiring (including auth endpoints) and JSON/error response checks.
+- `verify-ui-pages`: Use for page/component wiring and local/auth UI flow checks.
 - `verify-tests`: Use for test presence and test execution checks.
-- `verify-local-mode`: Use to prevent local-data mode regressions and ensure Supabase is not reintroduced.
+- `verify-local-mode`: Use to prevent local-data mode regressions (with auth flow intact) and ensure Supabase is not reintroduced.
 
 ## Typical Workflow
 

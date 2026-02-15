@@ -7,7 +7,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import UserBadge from "@/components/UserBadge";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import HeroSection from "@/components/HeroSection";
-import { fetchRecommendations } from "@/lib/recommendations/client";
+import { fetchLatestDailyTopRecommendations } from "@/lib/recommendations/client";
 import { getMarketLabelBySymbol, inferCurrencyBySymbol } from "@/lib/recommendations/market";
 import { StockRecommendation } from "@/lib/recommendations/types";
 import { ArrowRight, BrainCircuit, Sparkles } from "lucide-react";
@@ -63,7 +63,7 @@ export default function HomeView({
   useEffect(() => {
     let active = true;
 
-    fetchRecommendations({ language: lang, limit: 3 })
+    fetchLatestDailyTopRecommendations({ language: lang, limit: 3 })
       .then((items) => {
         if (!active) return;
         setTopRecommendations(items);
@@ -98,6 +98,16 @@ export default function HomeView({
     if (score >= 80) return "text-primary bg-primary/10 border-primary/20";
     return "text-amber-600 bg-amber-500/10 border-amber-500/20";
   };
+
+  const syncedRankings: RankingItem[] = topRecommendations.map((item, index) => ({
+    rank: index + 1,
+    win_rate: 0,
+    avg_return: item.fluctuationRate,
+    confluence_score: item.aiScore,
+    ticker: item.symbol,
+    name: item.name,
+  }));
+  const visibleRankings = syncedRankings.length > 0 ? syncedRankings : rankings.slice(0, 3);
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -171,7 +181,7 @@ export default function HomeView({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-4xl mx-auto mb-8">
-          {rankings.map((item, index) => (
+          {visibleRankings.map((item, index) => (
             <StockCard
               key={item.rank}
               rank={item.rank}
@@ -266,26 +276,6 @@ export default function HomeView({
             </div>
           </div>
         </section>
-
-        {!isLoggedIn && (
-          <div id="auth-section" className="mt-10 scroll-mt-24">
-            <div className="rounded-3xl border border-border bg-card p-10 text-center shadow-[0_24px_80px_rgba(15,23,42,0.12)]">
-              <p className="text-[11px] uppercase tracking-[0.4em] text-muted-foreground">{t("home.getFullAccess")}</p>
-              <h3 className="mt-4 font-display text-2xl font-semibold text-foreground whitespace-pre-line">
-                {t("home.signInToUnlock")}
-              </h3>
-              <p className="mt-2 text-sm text-muted-foreground whitespace-pre-line">{t("home.googleOnly")}</p>
-              <div className="mt-6 flex justify-center">
-                <Link
-                  href="/dashboard"
-                  className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
-                >
-                  {t("nav.goToLogin")}
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
 
         <section className="mt-16 rounded-3xl border border-border bg-card p-10 shadow-[0_24px_80px_rgba(15,23,42,0.12)]">
           <p className="text-[11px] uppercase tracking-[0.4em] text-muted-foreground">{t("pricing.kicker")}</p>

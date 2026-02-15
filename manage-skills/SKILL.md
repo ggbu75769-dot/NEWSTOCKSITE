@@ -36,10 +36,10 @@ Keep project verification skills accurate as the codebase evolves.
 |------|------|---------------|
 | `verify-deps` | Verify dependency hygiene, required scripts, and no Supabase deps | `package.json`, `package-lock.json`, `tsconfig.json`, `next.config.js` |
 | `verify-lib-localdata` | Verify local data adapters and file-based loaders | `lib/localDb.ts`, `lib/searchStock.ts`, `lib/recommendations/**`, `data/**`, `logs/**` |
-| `verify-api-routes` | Verify app API route handlers and local adapter wiring | `app/api/**/route.ts`, `app/api/search/route.ts`, `app/api/market/route.ts`, `app/api/recommendations/route.ts` |
-| `verify-ui-pages` | Verify page/component wiring and local UI flow | `app/**/page.tsx`, `components/**/*.tsx`, `components/**/*.jsx` |
-| `verify-tests` | Verify test files, key assertions, and runnable test scripts | `tests/**`, `vitest.config.ts`, `package.json` |
-| `verify-local-mode` | Verify local-data operation after Supabase removal | `app/page.tsx`, `app/dashboard/page.tsx`, `app/recommendations/page.tsx`, `app/login/page.tsx`, `app/api/search/route.ts`, `app/api/market/route.ts`, `components/HomeView.tsx`, `components/DashboardView.tsx`, `components/RecommendationsView.tsx`, `components/SearchBar.tsx`, `components/SignOutButton.tsx`, `lib/localDb.ts`, `lib/searchStock.ts`, `lib/recommendations/tier1.ts`, `tests/api-search.test.ts`, `package.json` |
+| `verify-api-routes` | Verify app API route handlers and local/auth adapter wiring | `app/api/**/route.ts`, `app/api/search/route.ts`, `app/api/market/route.ts`, `app/api/recommendations/route.ts`, `app/api/auth/**/route.ts`, `lib/passwordReset.ts`, `lib/rateLimit.ts` |
+| `verify-ui-pages` | Verify page/component wiring and local/auth UI flow | `app/**/page.tsx`, `components/**/*.tsx`, `components/**/*.jsx` |
+| `verify-tests` | Verify test files, key assertions, and runnable test scripts | `tests/**`, `vitest.config.ts`, `package.json`, `lib/rateLimit.ts` |
+| `verify-local-mode` | Verify local-data operation with auth flow and no Supabase regressions | `app/page.tsx`, `app/dashboard/page.tsx`, `app/recommendations/page.tsx`, `app/login/page.tsx`, `app/forgot-password/page.tsx`, `app/reset-password/page.tsx`, `app/api/search/route.ts`, `app/api/market/route.ts`, `app/api/auth/**/route.ts`, `components/HomeView.tsx`, `components/DashboardView.tsx`, `components/RecommendationsView.tsx`, `components/SearchBar.tsx`, `components/SignOutButton.tsx`, `components/LoginView.tsx`, `components/ForgotPasswordView.tsx`, `components/ResetPasswordView.tsx`, `lib/localDb.ts`, `lib/searchStock.ts`, `lib/recommendations/tier1.ts`, `lib/passwordReset.ts`, `lib/rateLimit.ts`, `tests/api-search.test.ts`, `tests/rate-limit.test.ts`, `package.json` |
 
 ## Workflow
 

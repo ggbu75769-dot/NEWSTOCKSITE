@@ -1,0 +1,14 @@
+{
+  "generated_at": "2026-02-14 15:45:28",
+  "run_count": 3,
+  "best_run": {
+    "run": "20260214_114408",
+    "score": 0.6175880170725389,
+    "top_hit_mean": 0.49753332138061523,
+    "lift_mean": 1.14291922428369,
+    "feature_count": 14,
+    "features": "SMA_5,MACDh_12_26_9,ADX_14,DMP_14,DMN_14,PSARl_0.02_0.2,RSI_14,CCI_14_0.015,ROC_10,WILLR_14,BBP_20_2.0_2.0,STDEV_20,OBV,VWMA_20",
+    "elapsed_seconds": 14427.75
+  },
+  "consensus_dir": "logs\\indicator_combo_optimizer\\consensus_20260214_154528"
+}

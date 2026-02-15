@@ -1,0 +1,49 @@
+{
+  "completed_at": "2026-02-14 16:46:23",
+  "elapsed_seconds": 3648.13,
+  "input": "stock_data\\korean_market_10y_with_indicators.parquet",
+  "output_dir": "logs\\indicator_combo_optimizer\\20260214_154535",
+  "best_strategy": {
+    "features": [
+      7,
+      9,
+      11,
+      22,
+      23,
+      25,
+      27,
+      29,
+      36
+    ],
+    "weights": [
+      0.24986377358436584,
+      0.23749200999736786,
+      0.18266458809375763,
+      0.06275443732738495,
+      0.029095973819494247,
+      0.09760449826717377,
+      0.02887468785047531,
+      0.05650727078318596,
+      0.055142756551504135
+    ],
+    "score": 0.6168393974411388,
+    "score_mean": 0.620798616989299,
+    "score_std": 0.015836878192640392,
+    "top_hit_mean": 0.49721889197826385,
+    "lift_mean": 1.142100153823307,
+    "brier_mean": 0.24553116783499718,
+    "logloss_mean": 0.6841770112514496,
+    "feature_names": [
+      "MACDh_12_26_9",
+      "ADX_14",
+      "DMN_14",
+      "ROC_10",
+      "WILLR_14",
+      "BBL_20_2.0_2.0",
+      "BBU_20_2.0_2.0",
+      "BBP_20_2.0_2.0",
+      "CMF_20"
+    ]
+  },
+  "top_candidates_path": "logs\\indicator_combo_optimizer\\20260214_154535\\top_candidates.csv"
+}

@@ -1,6 +1,6 @@
 ---
 name: verify-local-mode
-description: Verify that the app operates in local-data mode without Supabase dependencies. Use when touching data access, search/market APIs, recommendations loading, dashboard/home UI wiring, local auth behavior, tests, or package dependencies related to backend data providers.
+description: Verify that the app operates in local-data mode without Supabase dependencies while keeping NextAuth-based login flows intact. Use when touching data access, search/market APIs, recommendations loading, auth flows, tests, or package dependencies related to backend data providers.
 ---
 
 # Verify Local Mode
@@ -11,7 +11,7 @@ Prevent regressions after migration from Supabase to local CSV/log-based data.
 
 1. Ensure Supabase dependencies and code references do not re-enter.
 2. Ensure local data entrypoints are present and wired.
-3. Ensure primary pages use local flow (no auth-gated server session).
+3. Ensure primary pages use local data flow while preserving intended auth-gated pages.
 4. Ensure typecheck and tests pass.
 
 ## Role with Other Verify Skills
@@ -33,13 +33,19 @@ This skill is the umbrella local-mode regression check.
 | `app/page.tsx` | Home page server wiring to local rankings. |
 | `app/dashboard/page.tsx` | Dashboard page without server session dependency. |
 | `app/recommendations/page.tsx` | Recommendations page in local mode. |
-| `app/login/page.tsx` | Local login behavior (redirect/deprecation path). |
+| `app/login/page.tsx` | Login page behavior and callback redirect handling. |
+| `app/forgot-password/page.tsx` | Forgot-password page wiring. |
+| `app/reset-password/page.tsx` | Reset-password page wiring. |
 | `components/HomeView.tsx` | Home UI flow and local navigation wiring. |
 | `components/DashboardView.tsx` | Dashboard local market fetch and rendering. |
 | `components/RecommendationsView.tsx` | Recommendations UI in local mode. |
 | `components/SearchBar.tsx` | Local search UI behavior. |
 | `components/SignOutButton.tsx` | Local mode reset/exit behavior. |
+| `components/LoginView.tsx` | Credentials/Google auth UI flow. |
+| `components/ForgotPasswordView.tsx` | Forgot-password submission UI. |
+| `components/ResetPasswordView.tsx` | Password reset UI. |
 | `tests/api-search.test.ts` | Unit test coverage for local search adapter. |
+| `tests/rate-limit.test.ts` | Unit test coverage for auth rate limiting helper. |
 | `package.json` | Dependency source of truth (must not contain `@supabase/*`). |
 
 ## Workflow
@@ -85,6 +91,7 @@ rg -n "searchStock\\(|/api/market|NextResponse\\.json" app/api
 Pass criteria:
 - `app/api/search/route.ts` calls `searchStock(symbol)`.
 - `app/api/market/route.ts` exists and returns JSON payload.
+- Auth routes return structured JSON errors and use shared helpers (`passwordReset`, `rateLimit`).
 
 Fail criteria:
 - Search route depends on removed server client/session APIs.
@@ -95,29 +102,30 @@ Fail criteria:
 Run:
 
 ```bash
-rg -n "isLoggedIn|DashboardView|RecommendationsView|redirect\\(\"/dashboard\"\\)|/api/market|searchStock|sessionStorage" app/page.tsx app/dashboard/page.tsx app/recommendations/page.tsx app/login/page.tsx components/HomeView.tsx components/DashboardView.tsx components/RecommendationsView.tsx components/SearchBar.tsx components/SignOutButton.tsx
+rg -n "isLoggedIn|DashboardView|RecommendationsView|redirect\\(\"/dashboard\"\\)|redirect\\(\"/login|/api/market|searchStock|sessionStorage|signIn\\(|signOut\\(|/api/auth/register|/api/auth/forgot-password|/api/auth/reset-password" app/page.tsx app/dashboard/page.tsx app/recommendations/page.tsx app/login/page.tsx app/forgot-password/page.tsx app/reset-password/page.tsx components/HomeView.tsx components/DashboardView.tsx components/RecommendationsView.tsx components/SearchBar.tsx components/SignOutButton.tsx components/LoginView.tsx components/ForgotPasswordView.tsx components/ResetPasswordView.tsx
 ```
 
 Pass criteria:
 - Home page renders with local ranking flow.
-- Dashboard page renders without server session checks.
-- Recommendations page renders in local mode.
-- Login page performs local redirect behavior (or is explicitly deprecated).
-- UI components use local API/data flow and do not depend on removed auth clients.
+- Dashboard/recommendations pages use intended auth gating and local data API routes.
+- Login/forgot/reset pages render expected auth UI flows.
+- UI components use local API/data flow and NextAuth client functions only where expected.
 
 Fail criteria:
-- Any page/UI component reintroduces server-session/Supabase-based gating.
+- Any page/UI component reintroduces Supabase-based coupling.
+- Auth-required pages lose intended gating or callback redirect flow.
 
 ### Step 5: Check Local Search Test Coverage
 
 Run:
 
 ```bash
-rg -n "getLocalSearchResult|searchStock" tests/api-search.test.ts lib/searchStock.ts
+rg -n "getLocalSearchResult|searchStock|checkRateLimit|readClientIdentifier" tests/api-search.test.ts tests/rate-limit.test.ts lib/searchStock.ts lib/rateLimit.ts
 ```
 
 Pass criteria:
 - `tests/api-search.test.ts` validates local search behavior.
+- `tests/rate-limit.test.ts` validates auth throttling helper behavior.
 - `lib/searchStock.ts` delegates to local DB search function.
 
 Fail criteria:
